@@ -4,7 +4,7 @@ module LibCX320
   class DeviceDll
     extend ErrorHandling
     include ErrorHandling
-    
+
     def self.devices
       slot = FFI::MemoryPointer.new :int
       id = FFI::MemoryPointer.new :int
@@ -16,7 +16,7 @@ module LibCX320
       else
         devs << new(slot.read_int, id.read_int)
       end
-      
+
       loop do
         slot.write_int slot.read_int
         id.write_int id.read_int
@@ -32,12 +32,12 @@ module LibCX320
       end
       devs
     end
-    
+
     def initialize(slot, id)
       @slot = slot
       @id = id
     end
-    
+
     def connected?
       slot = FFI::MemoryPointer.new :int
       slot.write_int @slot
@@ -45,6 +45,9 @@ module LibCX320
       id.write_int @id
 
       C.CXCMD_CheckIfConnected(slot, id)
+    end
+
+    def close
     end
 
     def ready?
@@ -64,11 +67,11 @@ module LibCX320
     def image_out(layer, data, buffer)
       check_returncode C.CXCMD_ImageOut(@slot, @id, data, data.size, layer, buffer)
     end
-    
+
     def print(color, buffer, async)
       check_returncode C.CXCMD_Print(@slot, @id, color, buffer, async)
     end
-    
+
     def load_card(pos, flip, adjusted, async)
       check_returncode C.CXCMD_LoadCard(@slot, @id, pos, flip, adjusted, async)
     end
@@ -76,7 +79,7 @@ module LibCX320
     def move_card(pos, flip, adjusted, async)
       check_returncode C.CXCMD_MoveCard(@slot, @id, pos, flip, adjusted, async)
     end
-    
+
     def retransfer_and_eject(async)
       check_returncode C.CXCMD_RetransferAndEject(@slot, @id, async)
     end
@@ -84,13 +87,13 @@ module LibCX320
     def retransfer_and_turn(async)
       check_returncode C.CXCMD_RetransferAndTurn(@slot, @id, async)
     end
-    
-    
+
+
     def write_mag(format, _len, data)
       cdata = FFI::MemoryPointer.from_string(data)
       check_returncode C.CXCMD_WriteMagData(@slot, @id, cdata, data.bytesize, format)
     end
-    
+
     def read_mag(format, _len)
       cdata = FFI::MemoryPointer.new(:char, 105)
       clen = FFI::MemoryPointer.new(:int)
@@ -98,7 +101,7 @@ module LibCX320
       check_returncode C.CXCMD_ReadMagData(@slot, @id, cdata, clen, format)
       cdata.get_bytes(0, clen.read_int)
     end
-    
+
     def ic_control(type, action)
       check_returncode C.CXCMD_ICControl(@slot, @id, type, action)
     end

@@ -3,22 +3,22 @@ require 'libusb'
 module LibCX320
   class DeviceUsb
     include ErrorHandling
-    
+
     attr_reader :devh
-    
+
     def self.devices
       @@ctx = LIBUSB::Context.new
-      
+
       @@ctx.devices(idVendor: 0x04f1, idProduct: 0x4033).map.with_index do |dev, devidx|
         new(dev, devidx)
       end
     end
-    
+
     def bulk_transfer(*args)
       puts args.inspect[0, 90]
       @devh.bulk_transfer(*args)
     end
-    
+
     def send_command(cdb, data_length, direction=LIBUSB::ENDPOINT_IN)
       ensure_open
       @tag += 1
@@ -43,7 +43,7 @@ module LibCX320
           recv += bulk_transfer(endpoint: 0x02, dataOut: edata)
         end
       end
-      
+
       retries = 5
       begin
         buffer = bulk_transfer(endpoint: 0x81, dataIn: 13, timeout: 999999999)
@@ -55,10 +55,10 @@ module LibCX320
         end
         raise
       end
-      
+
       return recv
     end
-    
+
     def check_status_urb(buffer, expected_tag)
       dCSWSignature, dCSWTag, dCSWDataResidue, bCSWStatus = buffer.unpack('a4VVC')
 
@@ -66,7 +66,7 @@ module LibCX320
       if bCSWStatus != 0
         check_returncode(request_sense_error)
       end
-    end    
+    end
 
     def initialize(dev, devidx)
       @dev = dev
@@ -74,7 +74,7 @@ module LibCX320
       @tag = 0
       @devh = nil
     end
-    
+
     def ensure_open
       return @devh if @devh
       @devh = @dev.open
@@ -91,17 +91,17 @@ module LibCX320
       # end
 
       send_inquiry
-      
+
       @devh
     end
-    
+
     def close
       if @devh
         @devh.release_interface(0)
+        @devh.close
       end
-      @dev.close
     end
-    
+
     def send_inquiry
       expected_length = 0x60 # INQUIRY_LENGTH
       cdb = [ 0x12, 0, 0, # Inquiry
@@ -110,20 +110,20 @@ module LibCX320
 
       send_command( cdb, expected_length )
     end
-    
+
     def request_sense_error
       expected_length = 0x14
       cdb = [ 0x03, 0, 0, expected_length, 0].pack('CCCnC')
       res = send_command( cdb, expected_length )
-      
+
       -( 0x01 << 24 | res.getbyte(0x02) << 16 | res.getbyte(0x0c) << 8 | 0 )
     end
-    
+
     def ready?
       cdb = [ 0, 0].pack('Nn')
       send_command( cdb, nil)
     end
-    
+
     def rezero_unit
       cdb = [ 1, 0, 0].pack('CCN')
       send_command( cdb, nil)
@@ -139,12 +139,12 @@ module LibCX320
 
       send_command(cdb, expected_length)
     end
-    
+
     def image_out(layer, data, buffer)
       cdb = [ 0x2a, 0, layer + buffer*8, 0, 0, data.bytesize, 0].pack('CCCCCNC')
       send_command( cdb, data, LIBUSB::ENDPOINT_OUT )
     end
-    
+
     def load_move_card(scode, p1, p2, pos)
       cdb = [ 0x31, scode, # load card
               p1, 0,
@@ -156,7 +156,7 @@ module LibCX320
     def print(color, buffer, async)
       load_move_card(0x08, async + color*2, buffer, 0)
     end
-    
+
     def load_card(pos, flip, adjusted, async)
       load_move_card(0x01, async, flip*2 + adjusted*4, pos)
     end
@@ -164,7 +164,7 @@ module LibCX320
     def move_card(pos, flip, adjusted, async)
       load_move_card(0x0b, async, flip*2 + adjusted*4, pos)
     end
-    
+
     def retransfer_and_eject(async)
       load_move_card(0x09, async, 0, 0)
     end
@@ -172,18 +172,18 @@ module LibCX320
     def retransfer_and_turn(async)
       load_move_card(0x0a, async, 0, 0)
     end
-    
-    
+
+
     def write_mag(format, len, data)
       cdb = [ 0x2f, 0, format, 0, data.bytesize, 0].pack('CNCCnC')
       send_command( cdb, data, LIBUSB::ENDPOINT_OUT )
     end
-    
+
     def read_mag(format, len)
       cdb = [ 0x2e, 0, format, 0, len, 0].pack('CNCCnC')
       send_command( cdb, len )
     end
-    
+
     def ic_control(type, action)
       cdb = [ 0x32, type*4 + action, 0, 0].pack('CCNN')
       send_command( cdb, nil )

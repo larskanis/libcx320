@@ -2,21 +2,25 @@
 module LibCX320
   class CX320
     attr_reader :dev
-    
+
     def initialize(dev)
       @dev = dev
     end
-    
+
     def self.devices(dev_type)
       dev_type.devices.map do |dev|
         self.new(dev)
       end
     end
 
+    def close
+      @dev.close
+    end
+
     def ready?
       @dev.ready?
     end
-    
+
     def rezero_unit
       @dev.rezero_unit
     end
@@ -65,7 +69,7 @@ module LibCX320
       UV: 4,
       PeelOff: 5
     }
-    
+
     def image_out(layer, data, buffer=0)
       buffer = Buffer2Code[buffer] || buffer
       layer = ImageLayer2Code[layer] || layer
@@ -144,34 +148,34 @@ module LibCX320
     end
 
     MagFormat = {
-      JIS2_7BIT: [0x07, 69], # 69 charcters at most
-      ISO1_6BIT: [0x16, 76], # 76 charcters at most
-      ISO1_7BIT: [0x17, 69], # 69 charcters at most
-      ISO2_4BIT: [0x24, 37], # 37 charcters at most
-      ISO3_4BIT: [0x34, 104], # 104 charcters at most
-      ISO3_7BIT: [0x37, 69], # 69 charcters at most
+      jis2_7bit: [0x07, 69], # 69 charcters at most
+      iso1_6bit: [0x16, 76], # 76 charcters at most
+      iso1_7bit: [0x17, 69], # 69 charcters at most
+      iso2_4bit: [0x24, 37], # 37 charcters at most
+      iso3_4bit: [0x34, 104], # 104 charcters at most
+      iso3_7bit: [0x37, 69], # 69 charcters at most
     }
-    
+
     def write_mag(format, data)
       format, len = MagFormat[format] || format
       @dev.write_mag(format, len, data)
     end
-    
+
     def read_mag(format)
       format, len = MagFormat[format] || format
       @dev.read_mag(format, len)
     end
-    
+
     IC_Types = {
-      CONTACT: 0,
-      CONTACTLESS: 1,
+      contact: 0,
+      contactless: 1,
     }
-    
+
     IC_Actions = {
-      CONTACT: 0,
-      RELEASE: 1,
+      contact: 0,
+      release: 1,
     }
-    
+
     def ic_control(type, action)
       type = IC_Types[type] || type
       action = IC_Actions[action] || action
@@ -184,13 +188,13 @@ module LibCX320
     # attach_function :CXCMD_LogSense, [:int, :int, :int, :pointer], :int
     # attach_function :CXCMD_LogSelect, [:int, :int], :int
   end
-  
+
   class CX320_DLL < CX320
     def self.devices(*args)
       super(DeviceDll, *args)
     end
   end
-  
+
   class CX320_USB < CX320
     def self.devices(*args)
       super(DeviceUsb, *args)
