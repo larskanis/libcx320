@@ -5,11 +5,11 @@ require 'libcx320/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "libcx320"
-  spec.version       = Libcx320::VERSION
-  spec.authors       = ["Holger Arndt"]
-  spec.email         = ["arndt@comcard.de"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.version       = LibCX320::VERSION
+  spec.authors       = ["Holger Arndt", "Lars Kanis"]
+  spec.email         = ["arndt@comcard.de", "kanis@comcard.de"]
+  spec.summary       = %q{Driver for Retransfer Printer CX-320}
+  spec.description   = %q{Driver for Retransfer Printer CX-320. Usable per PCP05CT.DLL or LIBUSB.}
   spec.homepage      = ""
   spec.license       = "MIT"
 

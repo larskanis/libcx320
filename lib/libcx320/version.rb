@@ -1,3 +1,3 @@
-module Libcx320
-  VERSION = "0.0.1"
+module LibCX320
+  VERSION = "0.1.0"
 end
