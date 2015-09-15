@@ -15,7 +15,7 @@ module LibCX320
     end
     
     def bulk_transfer(*args)
-      p args
+      puts args.inspect[0, 90]
       @devh.bulk_transfer(*args)
     end
     
@@ -34,7 +34,11 @@ module LibCX320
       if data_length && direction==LIBUSB::ENDPOINT_IN
         recv = bulk_transfer(endpoint: 0x81, dataIn: data_length)
       elsif data_length
-        recv = bulk_transfer(endpoint: 0x02, dataOut: data_length)
+        recv = 0
+        while data_length && !data_length.empty?
+          edata = data_length.slice!(0...0x10000)
+          recv += bulk_transfer(endpoint: 0x02, dataOut: edata)
+        end
       end
       get_status(expected_tag)
       
@@ -136,32 +140,52 @@ module LibCX320
     end
     
     def image_out(layer, data, buffer)
-      # todo: send!
+      cdb = [ 0x2a, 0, layer + buffer*8, 0, 0, data.bytesize, 0].pack('CCCCCNC')
+      send_command( cdb, data, LIBUSB::ENDPOINT_OUT )
     end
     
-    def load_move_card(scode, pos, flip, adjusted, async)
-      start = 0
+    def load_move_card(scode, p1, p2, pos)
       cdb = [ 0x31, scode, # load card
-              async, 0,
-              flip*2 + adjusted*4, 0, pos, 0,
+              p1, 0,
+              p2, 0, pos, 0,
               ].pack('CCCCCnCn')
       send_command(cdb, nil)
     end
 
+    def print(color, buffer, async)
+      load_move_card(0x08, async + color*2, buffer, 0)
+    end
+    
     def load_card(pos, flip, adjusted, async)
-      load_move_card(0x01, pos, flip, adjusted, async)
+      load_move_card(0x01, async, flip*2 + adjusted*4, pos)
     end
 
     def move_card(pos, flip, adjusted, async)
-      load_move_card(0x0b, pos, flip, adjusted, async)
+      load_move_card(0x0b, async, flip*2 + adjusted*4, pos)
     end
     
     def retransfer_and_eject(async)
-      load_move_card(0x09, 0, 0, 0, async)
+      load_move_card(0x09, async, 0, 0)
     end
 
     def retransfer_and_turn(async)
-      load_move_card(0x0a, 0, 0, 0, async)
+      load_move_card(0x0a, async, 0, 0)
+    end
+    
+    
+    def write_mag(format, len, data)
+      cdb = [ 0x2f, 0, format, 0, data.bytesize, 0].pack('CNCCnC')
+      send_command( cdb, data, LIBUSB::ENDPOINT_OUT )
+    end
+    
+    def read_mag(format, len)
+      cdb = [ 0x2e, 0, format, 0, len, 0].pack('CNCCnC')
+      send_command( cdb, len )
+    end
+    
+    def ic_control(type, action)
+      cdb = [ 0x32, type*4 + action, 0, 0].pack('CCNN')
+      send_command( cdb, nil )
     end
   end
 end

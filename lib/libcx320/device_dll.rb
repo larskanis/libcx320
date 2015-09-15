@@ -12,7 +12,7 @@ module LibCX320
       devs = [];
       begin
         check_returncode C.CXCMD_ScanCX320(slot, id)
-      rescue DeviceError
+      rescue NoPrinter, NoMorePrinter
       else
         devs << new(slot.read_int, id.read_int)
       end
@@ -23,7 +23,7 @@ module LibCX320
 
         begin
           check_returncode C.CXCMD_ScanCX320Next(slot, id)
-        rescue DeviceError
+        rescue NoPrinter, NoMorePrinter
           # Suche beim ersten Fehler beenden
           break
         else
@@ -85,5 +85,22 @@ module LibCX320
       check_returncode C.CXCMD_RetransferAndTurn(@slot, @id, async)
     end
     
+    
+    def write_mag(format, _len, data)
+      cdata = FFI::MemoryPointer.from_string(data)
+      check_returncode C.CXCMD_WriteMagData(@slot, @id, cdata, data.bytesize, format)
+    end
+    
+    def read_mag(format, _len)
+      cdata = FFI::MemoryPointer.new(:char, 105)
+      clen = FFI::MemoryPointer.new(:int)
+      clen.write_int cdata.size
+      check_returncode C.CXCMD_ReadMagData(@slot, @id, cdata, clen, format)
+      cdata.get_bytes(0, clen.read_int)
+    end
+    
+    def ic_control(type, action)
+      check_returncode C.CXCMD_ICControl(@slot, @id, type, action)
+    end
   end
 end

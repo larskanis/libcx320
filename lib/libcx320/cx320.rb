@@ -68,9 +68,9 @@ module LibCX320
     
     def image_out(layer, data, buffer=0)
       buffer = Buffer2Code[buffer] || buffer
-      layer = Layer2Code[layer] || layer
+      layer = ImageLayer2Code[layer] || layer
 
-      @dev.image_out(@slot, @id, data, data.size, layer, buffer)
+      @dev.image_out(layer, data, buffer)
     end
 
     # Notice: As K LUT is used internally, K must not be specified.
@@ -102,7 +102,7 @@ module LibCX320
     }
     def print(color=[:YMC, :K], buffer=0, async=false)
       buffer = Buffer2Code[buffer] || buffer
-      color = color.map{|c| PrintColor2Code[c] }.inject(&:&) if color.kind_of?(Array)
+      color = color.map{|c| PrintColor2Code[c] }.inject(&:|) if color.kind_of?(Array)
       async = async ? 1 : 0
 
       @dev.print(color, buffer, async)
@@ -143,9 +143,40 @@ module LibCX320
       @dev.retransfer_and_turn(async)
     end
 
-    # MS Encoding
-    # attach_function :CXCMD_WriteMagData, [:int, :int, :pointer, :int, :int], :int
-    # attach_function :CXCMD_ReadMagData, [:int, :int, :pointer, :pointer, :int], :int
+    MagFormat = {
+      JIS2_7BIT: [0x07, 69], # 69 charcters at most
+      ISO1_6BIT: [0x16, 76], # 76 charcters at most
+      ISO1_7BIT: [0x17, 69], # 69 charcters at most
+      ISO2_4BIT: [0x24, 37], # 37 charcters at most
+      ISO3_4BIT: [0x34, 104], # 104 charcters at most
+      ISO3_7BIT: [0x37, 69], # 69 charcters at most
+    }
+    
+    def write_mag(format, data)
+      format, len = MagFormat[format] || format
+      @dev.write_mag(format, len, data)
+    end
+    
+    def read_mag(format)
+      format, len = MagFormat[format] || format
+      @dev.read_mag(format, len)
+    end
+    
+    IC_Types = {
+      CONTACT: 0,
+      CONTACTLESS: 1,
+    }
+    
+    IC_Actions = {
+      CONTACT: 0,
+      RELEASE: 1,
+    }
+    
+    def ic_control(type, action)
+      type = IC_Types[type] || type
+      action = IC_Actions[action] || action
+      @dev.ic_control(type, action)
+    end
 
     # Infos & Settings
     # attach_function :CXCMD_ModeSense, [:int, :int, :pointer], :int
