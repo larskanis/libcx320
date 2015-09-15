@@ -33,6 +33,9 @@ module LibCX320
 
       if data_length && direction==LIBUSB::ENDPOINT_IN
         recv = bulk_transfer(endpoint: 0x81, dataIn: data_length)
+        if recv[0,4] == "USBC".freeze
+          return check_status_urb(recv, expected_tag)
+        end
       elsif data_length
         recv = 0
         while data_length && !data_length.empty?
@@ -40,22 +43,11 @@ module LibCX320
           recv += bulk_transfer(endpoint: 0x02, dataOut: edata)
         end
       end
-      get_status(expected_tag)
       
-      return recv
-    end
-
-    def get_status(expected_tag)
       retries = 5
-      buffer = nil
       begin
         buffer = bulk_transfer(endpoint: 0x81, dataIn: 13, timeout: 999999999)
-        dCSWSignature, dCSWTag, dCSWDataResidue, bCSWStatus = buffer.unpack('a4VVC')
-
-        raise UnexpectedPacket, "Unexpected USB packet received" if expected_tag != dCSWTag
-        if bCSWStatus != 0
-          check_returncode(request_sense_error)
-        end
+        check_status_urb(buffer, expected_tag)
       rescue LIBUSB::ERROR_PIPE, UnexpectedPacket
         if (retries-=1)>=0
           @devh.clear_halt(0x81)
@@ -63,9 +55,18 @@ module LibCX320
         end
         raise
       end
-
-      buffer
+      
+      return recv
     end
+    
+    def check_status_urb(buffer, expected_tag)
+      dCSWSignature, dCSWTag, dCSWDataResidue, bCSWStatus = buffer.unpack('a4VVC')
+
+      raise UnexpectedPacket, "Unexpected USB packet received" if expected_tag != dCSWTag
+      if bCSWStatus != 0
+        check_returncode(request_sense_error)
+      end
+    end    
 
     def initialize(dev, devidx)
       @dev = dev
