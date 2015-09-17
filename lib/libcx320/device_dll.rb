@@ -105,5 +105,26 @@ module LibCX320
     def ic_control(type, action)
       check_returncode C.CXCMD_ICControl(@slot, @id, type, action)
     end
+
+    def mode_sense(page, len)
+      cdata = FFI::MemoryPointer.new(:char, len)
+      check_returncode C.CXCMD_ModeSense(@slot, @id, page, cdata)
+      cdata.get_bytes(0, cdata.size)
+    end
+
+    def mode_select(page, data)
+      cdata = FFI::MemoryPointer.from_string(@slot, @id, data)
+      check_returncode C.CXCMD_ModeSelect(@slot, @id, page, cdata)
+    end
+
+    def log_sense(page, len)
+      cdata = FFI::MemoryPointer.new(:char, len)
+      check_returncode C.CXCMD_LogSense(@slot, @id, page, cdata)
+      cdata.get_bytes(0, cdata.size)
+    end
+
+    def log_select
+      check_returncode C.CXCMD_LogSelect(@slot, @id)
+    end
   end
 end

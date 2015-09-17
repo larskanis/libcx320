@@ -33,7 +33,7 @@ module LibCX320
     attach_function :CXCMD_RezeroUnit, [:int, :int], :int
 
     # Infos & Settings
-    attach_function :CXCMD_ModeSense, [:int, :int, :pointer], :int
+    attach_function :CXCMD_ModeSense, [:int, :int, :int, :pointer], :int
     attach_function :CXCMD_ModeSelect, [:int, :int, :int, :pointer], :int
     attach_function :CXCMD_LogSense, [:int, :int, :int, :pointer], :int
     attach_function :CXCMD_LogSelect, [:int, :int], :int
