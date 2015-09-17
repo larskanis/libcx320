@@ -37,10 +37,16 @@ module LibCX320
           return check_status_urb(recv, expected_tag)
         end
       elsif data_length
-        recv = 0
+        recv_len = 0
         while data_length && !data_length.empty?
-          edata = data_length.slice!(0...0x10000)
-          recv += bulk_transfer(endpoint: 0x02, dataOut: edata)
+          begin
+            edata = data_length.slice!(0...0x10000)
+            recv_len += bulk_transfer(endpoint: 0x02, dataOut: edata)
+          rescue LIBUSB::ERROR_PIPE
+            @devh.clear_halt(0x02)
+            recv = bulk_transfer(endpoint: 0x81, dataIn: 13, timeout: 1)
+            return check_status_urb(recv, expected_tag)
+          end
         end
       end
 
