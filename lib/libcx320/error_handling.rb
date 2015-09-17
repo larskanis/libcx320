@@ -17,6 +17,9 @@ module LibCX320
     class UnknownPrinterError < PrinterError
     end
 
+    class BusyError < PrinterError
+    end
+
     ErrorById = {
       0x0102D000 => ["No card", "There is no card, or the hopper tray is not closed."],
       0x0102D100 => ["Door Open", "Printer door is opened."],
@@ -87,15 +90,25 @@ module LibCX320
       0x01062900 => ["Power On or Bus Device Reset Occurred", "Printer was initialized by turning on the printer power."],
       0x0142A200 => ["Media Run Out", "End of retransfer film is detected."],
       0x0142B200 => ["Ink Run Out", "End of ink ribbon is detected."],
-      
+
       0x02000006 => ["No Printer", "No printer found."],
       0x09000002 => ["No More Printer", "No further printer found."],
+
+      -1 => ["Busy Port Manager", "CX Port Manager did not send command to the printer because of Printer’s condition.  This error never happens."],
+      -2 => ["Busy Target", "Card Printer rejected the command because it is on the way of moving the card."],
+      -3 => ["Busy Busy", "CX-320 Control DLL rejected the command because the command issued by other process is on the way of processing."],
+      -4 => ["Busy Target2", "Card Printer rejected the command because it is on the way of printing on the retransfer film."],
+      -5 => ["Busy Target3", "Card Printer rejected the command because of both _TARGET_BUSY1 and _TARGET_BUSY2."],
     }
 
     ErrorById.each do |id, tt|
       name, text = tt
       klname = name.gsub(/[^a-z0-9]/i, " ").gsub(/ +([a-z])/i){ $1.upcase }.strip
-      klass = Class.new(PrinterError)
+      base_klass = case klname
+        when /^Busy/ then BusyError
+        else PrinterError
+      end
+      klass = Class.new(base_klass)
       const_set(klname, klass)
       tt << klass
     end
