@@ -200,4 +200,10 @@ module LibCX320
       super(DeviceUsb, *args)
     end
   end
+
+  class CX320_SIMU < CX320
+    def self.devices(*args)
+      super(DeviceSimu, *args)
+    end
+  end
 end
