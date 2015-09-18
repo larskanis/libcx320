@@ -113,7 +113,7 @@ module LibCX320
     end
 
     def mode_select(page, data)
-      cdata = FFI::MemoryPointer.from_string(@slot, @id, data)
+      cdata = FFI::MemoryPointer.from_string(data)
       check_returncode C.CXCMD_ModeSelect(@slot, @id, page, cdata)
     end
 

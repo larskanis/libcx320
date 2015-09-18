@@ -194,5 +194,27 @@ module LibCX320
       cdb = [ 0x32, type*4 + action, 0, 0].pack('CCNN')
       send_command( cdb, nil )
     end
+    
+    def mode_sense(page, len)
+      expected_length = 36
+      cdb = [ 0x1a, 0, page, 0, expected_length, 0].pack('CCCCC')
+      send_command( cdb, expected_length )
+    end
+
+    def mode_select(page, data)
+      cdb = [ 0x15, 0x10, page, 0, data.bytesize, 0].pack('CCCCC')
+      send_command( cdb, data, LIBUSB::ENDPOINT_OUT )
+    end
+
+    def log_sense(page, len)
+      expected_length = 36
+      cdb = [ 0x4d, 0, 0x40  | page, 0, 0, expected_length, 0].pack('CCCnnnC')
+      send_command( cdb, expected_length )
+    end
+
+    def log_select
+      cdb = [ 0x4c, 0x03, 0xc0, 0x00, 0].pack('CCCCN')
+      send_command( cdb, nil )
+    end
   end
 end
