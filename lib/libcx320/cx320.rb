@@ -190,6 +190,10 @@ module LibCX320
       end.freeze
     end
 
+    def self.merge_with_range(range, hash)
+      range.to_a.inject({}){|h,v| h[v] = v.to_s; h }.merge(hash).sort_by{|k,v| k }.inject({}){|h,(k,v)| h[k]=v; h }
+    end
+
     ModeSenseInkAttrs = to_attr_desc({
       ink_code: [2, nil, :set, {0x00 => 'YMCK', 0x02 => 'YMCK-PO', 0x03 => 'K', 0x04 => 'YMCKK', 0x05 => 'YMCK-UV'}],
       ink_number_printed: [4, nil, :word],
@@ -212,10 +216,10 @@ module LibCX320
       print_size_x: [28, nil, :word],
       print_size_y: [30, nil, :word],
       print_roller_temp_retransfer: [33, 4, :byte, 0..5],
-      print_velocity_front: [34, 5, :byte, 0..12],
-      print_velocity_back: [35, 6, :byte, 0..12],
+      print_velocity_front: [34, 5, :set, merge_with_range(1..11, 0 => "0 (Fast)", 12 => "12 (Slow)")],
+      print_velocity_back: [35, 6, :set, merge_with_range(1..11, 0 => "0 (Fast)", 12 => "12 (Slow)")],
       print_roller_temp_card_fix: [36, 7, :byte, 0..5],
-      print_velocity_card_fix: [37, 8, :byte, 0..4],
+      print_velocity_card_fix: [37, 8, :set, {0 => "0 (Slow)", 1 => "1", 2 => "2", 3 => "3", 4 => "4 (Fast)"}],
       print_peel_off_wait_seconds: [39, 10, :byte, 0..15],
       print_revision_number: [40, nil, :byte],
       print_resin_black_energy: [41, 13, :byte, 0..8],
