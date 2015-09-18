@@ -12,6 +12,13 @@ module LibCX320
       @devidx = devidx
       @buffers = [{}, {}]
       @card_pos = nil
+      @config = {
+        0x23 => ["23:26:00:00:03:e8:00:00:59:48:34:31:34:31:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00".gsub(":","")].pack("H*"),
+        0x28 => ["28:30:00:00:01:2c:01:2c:00:00:00:00:03:f5:02:7f:00:00:00:02:00:00:00:00:00:00:00:00:04:0c:02:98:00:05:02:00:00:04:00:00:01:04:00:00:01:00:00:06:22:01".gsub(":","")].pack("H*"),
+        0x2a => ["2a:08:00:00:00:00:00:00:00:00".gsub(":","")].pack("H*"),
+        0x38 => ["38:00:00:20:00:00:00:04:00:00:00:f5:00:01:00:04:00:00:00:00:00:02:00:04:00:00:04:90:00:03:00:04:00:00:00:f5".gsub(":","")].pack("H*"),
+      }
+      @config[0x3f] = @config[0x23] + @config[0x28] + @config[0x2a]
     end
 
     def close
@@ -98,7 +105,7 @@ module LibCX320
 
     def mode_sense(page, len)
       log "mode_sense(#{page}, #{len})"
-      0.upto(len-1).map{|i| [1].pack("C") }.join
+      [len - 1, 0, 0x10, 0].pack("CCCC") + @config[page]
     end
 
     def mode_select(page, data)
@@ -107,7 +114,7 @@ module LibCX320
 
     def log_sense(page, len)
       log "log_sense(#{page}, #{len})"
-      0.upto(len-1).map{|i| [1].pack("C") }.join
+      @config[page]
     end
 
     def log_select
