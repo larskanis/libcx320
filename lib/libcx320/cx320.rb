@@ -258,7 +258,7 @@ module LibCX320
 
     def mode_sense(page_sym)
       page, len, attr_lists = ModeSensePages[page_sym] || raise("invalid page: #{page_sym.inspect} not in #{ModeSensePages.keys.inspect}")
-      data = @dev.mode_sense(page, len)
+      data = @dev.mode_sense(page, len)[4..-1]
       lists = attr_lists.map do |attr_list, offset|
         data_to_attrs(data[offset..-1], attr_list)
       end
