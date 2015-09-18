@@ -11,6 +11,7 @@ module LibCX320
     def initialize(devidx)
       @devidx = devidx
       @buffers = [{}, {}]
+      @card_pos = nil
     end
 
     def close
@@ -34,7 +35,7 @@ module LibCX320
     end
 
     def get_current_card_position
-      [0].pack("C") * 8
+      [@card_pos ? 0x04 : 0x00, 0, 0, 0, 0, 0, 0, @card_pos].pack("CCCCCCCC")
     end
 
     def image_out(layer, data, buffer)
@@ -44,17 +45,17 @@ module LibCX320
     def print(color, buffer, async)
       log "print(#{color}, #{buffer}, #{async})"
 
-      if @buffer[buffer][1] && @buffer[buffer][2] && @buffer[buffer][3]
+      if @buffers[buffer][1] && @buffers[buffer][2] && @buffers[buffer][3]
         pic = Magick::Image.new(1036, 664)
-        pic.import_pixels(0, 0, 1036, 664, "R", @buffer[buffer][1])
-        pic.import_pixels(0, 0, 1036, 664, "G", @buffer[buffer][2])
-        pic.import_pixels(0, 0, 1036, 664, "B", @buffer[buffer][3])
+        pic.import_pixels(0, 0, 1036, 664, "R", @buffers[buffer][1])
+        pic.import_pixels(0, 0, 1036, 664, "G", @buffers[buffer][2])
+        pic.import_pixels(0, 0, 1036, 664, "B", @buffers[buffer][3])
         pic.display
       end
-      if @buffer[buffer][0]
+      if @buffers[buffer][0]
         pic = Magick::Image.new(1036, 664)
         %w[R G B].each do |color|
-          pic.import_pixels(0, 0, 1036, 664, color, @buffer[buffer][0])
+          pic.import_pixels(0, 0, 1036, 664, color, @buffers[buffer][0])
         end
         pic.display
       end
@@ -62,18 +63,25 @@ module LibCX320
 
     def load_card(pos, flip, adjusted, async)
       log "load_move_card(#{pos}, #{flip}, #{adjusted}, #{async})"
+      raise CommandSequenceError, "card is already loaded" if @card_pos
+      @card_pos = pos
     end
 
     def move_card(pos, flip, adjusted, async)
       log "load_move_card(#{pos}, #{flip}, #{adjusted}, #{async})"
+      raise CommandSequenceError, "no card loaded" unless @card_pos
+      @card_pos = pos
     end
 
     def retransfer_and_eject(async)
       log "load_move_card(#{async})"
+      raise CommandSequenceError, "card is not in position retransfer" if @card_pos != 0
+      @card_pos = nil
     end
 
     def retransfer_and_turn(async)
       log "load_move_card(#{async})"
+      raise CommandSequenceError, "card is not in position retransfer" if @card_pos != 0
     end
 
     def write_mag(format, len, data)
@@ -86,6 +94,24 @@ module LibCX320
 
     def ic_control(type, action)
       log "write_mag(#{type}, #{action})"
+    end
+
+    def mode_sense(page, len)
+      log "mode_sense(#{page}, #{len})"
+      0.upto(len-1).map{|i| [1].pack("C") }.join
+    end
+
+    def mode_select(page, data)
+      log "mode_select(#{page}, #{data.unpack("H*")[0]})"
+    end
+
+    def log_sense(page, len)
+      log "log_sense(#{page}, #{len})"
+      0.upto(len-1).map{|i| [1].pack("C") }.join
+    end
+
+    def log_select
+      log "log_select()"
     end
   end
 end

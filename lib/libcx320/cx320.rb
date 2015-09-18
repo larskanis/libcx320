@@ -259,7 +259,6 @@ module LibCX320
     def mode_sense(page_sym)
       page, len, attr_lists = ModeSensePages[page_sym] || raise("invalid page: #{page_sym.inspect} not in #{ModeSensePages.keys.inspect}")
       data = @dev.mode_sense(page, len)
-#       data = 0.upto(len-1).map{|i| [1].pack("C") }.join
       lists = attr_lists.map do |attr_list, offset|
         data_to_attrs(data[offset..-1], attr_list)
       end
@@ -281,14 +280,12 @@ module LibCX320
         data[offset..-1] = attrs_to_data(attr_list, data[offset..-1], attrs)
       end
       raise "invalid data length #{data.bytesize}" if data.bytesize != len
-#       p [page, data]
       @dev.mode_select(page, data)
     end
 
     def log_sense(page_sym)
       page, len, attr_lists = LogSensePages[page_sym] || raise("invalid page: #{page_sym.inspect} not in #{LogSensePages.keys.inspect}")
       data = @dev.log_sense(page, len)
-#       data = 0.upto(len-1).map{|i| [1].pack("C") }.join
       lists = attr_lists.map do |attr_list, offset|
         data_to_attrs(data[offset..-1], attr_list)
       end
