@@ -182,7 +182,25 @@ module LibCX320
       @dev.ic_control(type, action)
     end
 
-    AttrDescription = Struct.new(:name, :offs_read, :offs_write, :typ, :params, :value)
+    class AttrDescription < Struct.new(:name, :offs_read, :offs_write, :typ, :params)
+      def to_attribute
+        ext_type, ext_params = case typ
+        when :byte
+          [ :int, params || (0..0xff) ]
+        when :word
+          [ :int, params || (0..0xffff) ]
+        when :dword
+          [ :int, params || (0..0xffffffff) ]
+        when :set, :ascii
+          [ typ, params ]
+        else
+          raise "invalid attr type #{typ}"
+        end
+        Attribute.new(name, !!offs_write, ext_type, ext_params)
+      end
+    end
+
+    Attribute = Struct.new(:name, :writeable, :typ, :params, :value)
 
     def self.to_attr_desc(hash)
       hash.map do |key, args|
@@ -298,13 +316,15 @@ module LibCX320
 
     def self.mode_sense_attrs(page_sym)
       _page, _len, attr_lists = ModeSensePages[page_sym] || raise("invalid page: #{page_sym.inspect} not in #{ModeSensePages.keys.inspect}")
-      attr_lists.map(&:first).inject([], &:+)
+      attr_lists.map(&:first).inject([], &:+).map{|a| a.to_attribute }
     end
 
     def self.log_sense_attrs(page_sym)
       _page, _len, attr_lists = LogSensePages[page_sym] || raise("invalid page: #{page_sym.inspect} not in #{LogSensePages.keys.inspect}")
-      attr_lists.map(&:first).inject([], &:+)
+      attr_lists.map(&:first).inject([], &:+).map{|a| a.to_attribute }
     end
+
+    private
 
     def data_to_attrs(data, attr_list)
       attr_list.map do |attr|
@@ -323,7 +343,7 @@ module LibCX320
           raise "invalid attr type #{attr.typ}"
         end
 
-        nattr = attr.dup
+        nattr = attr.to_attribute
         nattr.value = val
         nattr
       end
