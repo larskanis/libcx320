@@ -2,6 +2,8 @@ require 'libusb'
 
 module LibCX320
   class DeviceSimu
+    include ErrorHandling
+
     def self.devices
       2.times.map do |idx|
         new(idx)
@@ -70,25 +72,25 @@ module LibCX320
 
     def load_card(pos, flip, adjusted, async)
       log "load_move_card(#{pos}, #{flip}, #{adjusted}, #{async})"
-      raise CommandSequenceError, "card is already loaded" if @card_pos
+      raise CommandSequenceError.new("card is already loaded", -0x01052A00) if @card_pos
       @card_pos = pos
     end
 
     def move_card(pos, flip, adjusted, async)
       log "load_move_card(#{pos}, #{flip}, #{adjusted}, #{async})"
-      raise CommandSequenceError, "no card loaded" unless @card_pos
+      raise CommandSequenceError.new("no card loaded", -0x01052A00) unless @card_pos
       @card_pos = pos
     end
 
     def retransfer_and_eject(async)
       log "load_move_card(#{async})"
-      raise CommandSequenceError, "card is not in position retransfer" if @card_pos != 0
+      raise CommandSequenceError.new("card is not in position retransfer", -0x01052A00) if @card_pos != 0
       @card_pos = nil
     end
 
     def retransfer_and_turn(async)
       log "load_move_card(#{async})"
-      raise CommandSequenceError, "card is not in position retransfer" if @card_pos != 0
+      raise CommandSequenceError.new("card is not in position retransfer", -0x01052A00) if @card_pos != 0
     end
 
     def write_mag(format, len, data)
