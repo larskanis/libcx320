@@ -1,5 +1,3 @@
-require 'libusb'
-
 module LibCX320
   class DeviceSimu
     include ErrorHandling
