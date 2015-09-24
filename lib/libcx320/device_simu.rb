@@ -57,14 +57,22 @@ module LibCX320
         pic.import_pixels(0, 0, 1036, 664, "R", @buffers[buffer][1])
         pic.import_pixels(0, 0, 1036, 664, "G", @buffers[buffer][2])
         pic.import_pixels(0, 0, 1036, 664, "B", @buffers[buffer][3])
-        pic.display
+        begin
+          pic.display
+        rescue
+          pic.write("cx320-cmy.jpeg")
+        end
       end
       if @buffers[buffer][0]
         pic = Magick::Image.new(1036, 664)
         %w[R G B].each do |color|
           pic.import_pixels(0, 0, 1036, 664, color, @buffers[buffer][0])
         end
-        pic.display
+        begin
+          pic.display
+        rescue
+          pic.write("cx320-k.jpeg")
+        end
       end
     end
 
