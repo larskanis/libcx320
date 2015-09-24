@@ -208,8 +208,17 @@ module LibCX320
       end.freeze
     end
 
-    def self.merge_with_range(range, hash)
-      range.to_a.inject({}){|h,v| h[v] = v.to_s; h }.merge(hash).sort_by{|k,v| k }.inject({}){|h,(k,v)| h[k]=v; h }
+    def self.make_range(hash)
+      byte_min = hash.inject(9999999){|m,(k, v)| [m, k].min }
+      byte_max = hash.inject(-9999999){|m,(k, v)| [m, k].max }
+      reverse = hash[byte_min].to_i > hash[byte_max].to_i
+      range = byte_min+1 .. byte_max-1
+      rhash = range.to_a.inject({}) do |h,k|
+        v = reverse ? byte_min + hash[byte_min].to_i - k : k - byte_min + hash[byte_min].to_i
+        h[k] = v.to_s #+ " (#{k})"
+        h
+      end
+      rhash.merge(hash).sort_by{|k,v| k }.inject({}){|h,(k,v)| h[k]=v; h }
     end
 
     ModeSenseInkAttrs = to_attr_desc({
@@ -219,36 +228,39 @@ module LibCX320
     })
 
     ModeSensePrintAttrs = to_attr_desc({
+      print_ink_code: [21, nil, :set, {0 => 'YMCK', 2 => 'YMCK-PO', 3 => 'K', 4 => 'YMCKK', 5 => 'YMCK-UV'}],
+      print_resin_black_energy: [41, 13, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
+      print_resin_black_mode: [42, 14, :set, {0 => 'Standard', 1 => 'Fine'}],
+      print_a0_energy: [43, 15, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
+      print_a1_energy: [44, 16, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
+      print_film_code: [20, 17, :set, {0 => 'Standard (1000 panels)', 2 => 'Standard (750panels)'}],
+      print_roller_temp_retransfer: [33, 4, :set, make_range(0 => "-3 (low)", 5 => "2 (high)")],
+      print_velocity_front: [34, 5, :set, make_range(0 => "2 (Fast)", 12 => "-10 (Slow)")],
+      print_velocity_back: [35, 6, :set, make_range(0 => "2 (Fast)", 12 => "-10 (Slow)")],
+
+      print_buzzer_mode: [45, 21, :set, {0 => 'Buzzer is enabled', 1 => 'Buzzer is disabled'}],
+      print_power_save_minutes: [46, 22, :set, {0 =>'5', 1 =>'10', 2 =>'15', 3 =>'20', 4 =>'25', 5 =>'30', 6 =>'45', 7 =>'60', 8 =>'Off'}],
+
+      print_roller_temp_card_fix: [36, 7, :set, make_range(0 => "-5 (low)", 5 => "0 (high)").merge(10 => "Off")],
+      print_velocity_card_fix: [37, 8, :set, make_range(0 => "-2 (slow)", 4 => "2 (fast)")],
+      print_peel_off_wait_seconds: [39, 10, :byte, 0..15],
+
+      print_card_code: [22, 19, :set, {0 => 'Standard', 2 => 'Thin card (Card thickness is 0.25mm)'}],
+      print_revision_number: [40, nil, :byte],
+      print_film_quantity: [47, nil, :byte, 0..10],
+      print_ink_quantity: [48, nil, :byte, 0..50],
+      print_card_quantity: [49, nil, :set, {0 => 'Greater than 25 cards', 1 => 'From 1 to 24 cards', 2 => 'No cards', 3 => 'Right Side Card loading mode'}],
       print_resolution_x: [4, nil, :word],
       print_resolution_y: [6, nil, :word],
       print_card_size_x: [12, nil, :word],
       print_card_size_y: [14, nil, :word],
       print_mg_mode: [17, nil, :set, {0 => 'None', 1 => 'MAG Encoder', 2 => 'JIS MAG Encoder'}],
-      print_ic_mode_contact: [18, nil, :set, {0 => 'None', 1 => 'Embedded IC Encoder', 2 => 'External IC Encoder'}],
       print_ic_mode_contactless: [19, nil, :set, {0 => 'None', 2 => 'External small IC Encoder', 3 => 'External large IC Encoder'}],
-      print_film_code: [20, 17, :set, {0 => 'Standard (1000 panels)', 2 => 'Standard (750panels)'}],
-      print_ink_code: [21, nil, :set, {0 => 'YMCK', 2 => 'YMCK-PO', 3 => 'K', 4 => 'YMCKK', 5 => 'YMCK-UV'}],
-      print_card_code: [22, 19, :set, {0 => 'Standard', 2 => 'Thin card(Card thickness is 0.25mm)'}],
+      print_ic_mode_contact: [18, nil, :set, {0 => 'None', 1 => 'Embedded IC Encoder', 2 => 'External IC Encoder'}],
       print_position_x: [24, nil, :word],
       print_position_y: [26, nil, :word],
       print_size_x: [28, nil, :word],
       print_size_y: [30, nil, :word],
-      print_roller_temp_retransfer: [33, 4, :byte, 0..5],
-      print_velocity_front: [34, 5, :set, merge_with_range(1..11, 0 => "0 (Fast)", 12 => "12 (Slow)")],
-      print_velocity_back: [35, 6, :set, merge_with_range(1..11, 0 => "0 (Fast)", 12 => "12 (Slow)")],
-      print_roller_temp_card_fix: [36, 7, :byte, 0..5],
-      print_velocity_card_fix: [37, 8, :set, {0 => "0 (Slow)", 1 => "1", 2 => "2", 3 => "3", 4 => "4 (Fast)"}],
-      print_peel_off_wait_seconds: [39, 10, :byte, 0..15],
-      print_revision_number: [40, nil, :byte],
-      print_resin_black_energy: [41, 13, :byte, 0..8],
-      print_resin_black_mode: [42, 14, :set, {0 => 'Standard', 1 => 'Fine'}],
-      print_a0_energy: [43, 15, :byte, 0..8],
-      print_a1_energy: [44, 16, :byte, 0..8],
-      print_buzzer_mode: [45, 21, :set, {0 => 'Buzzer is enabled', 1 => 'Buzzer is disabled'}],
-      print_power_save_minutes: [46, 22, :set, {0 =>'5', 1 =>'10', 2 =>'15', 3 =>'20', 4 =>'25', 5 =>'30', 6 =>'45', 7 =>'60', 8 =>'Off'}],
-      print_film_quantity: [47, nil, :byte, 0..10],
-      print_ink_quantity: [48, nil, :byte, 0..50],
-      print_card_quantity: [49, nil, :set, {0 => 'Greater than 25 cards', 1 => 'From 1 to 24 cards', 2 => 'No cards', 3 => 'Right Side Card loading mode'}],
     })
 
     ModeSenseEncodeAttrs = to_attr_desc({
