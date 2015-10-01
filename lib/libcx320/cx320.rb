@@ -182,7 +182,7 @@ module LibCX320
       @dev.ic_control(type, action)
     end
 
-    class AttrDescription < Struct.new(:name, :offs_read, :offs_write, :typ, :params)
+    class AttrDescription < Struct.new(:name, :offs_read, :offs_write, :default, :typ, :params)
       def to_attribute
         ext_type, ext_params = case typ
         when :byte
@@ -196,11 +196,11 @@ module LibCX320
         else
           raise "invalid attr type #{typ}"
         end
-        Attribute.new(name, !!offs_write, ext_type, ext_params)
+        Attribute.new(name, !!offs_write, default, ext_type, ext_params)
       end
     end
 
-    Attribute = Struct.new(:name, :writeable, :typ, :params, :value)
+    Attribute = Struct.new(:name, :writeable, :default, :typ, :params, :value)
 
     def self.to_attr_desc(hash)
       hash.map do |key, args|
@@ -215,57 +215,57 @@ module LibCX320
       range = byte_min+1 .. byte_max-1
       rhash = range.to_a.inject({}) do |h,k|
         v = reverse ? byte_min + hash[byte_min].to_i - k : k - byte_min + hash[byte_min].to_i
-        h[k] = v.to_s #+ " (#{k})"
+        h[k] = v.to_s # + " (#{k})"
         h
       end
       rhash.merge(hash).sort_by{|k,v| k }.inject({}){|h,(k,v)| h[k]=v; h }
     end
 
     ModeSenseInkAttrs = to_attr_desc({
-      ink_code: [2, nil, :set, {0x00 => 'YMCK', 0x02 => 'YMCK-PO', 0x03 => 'K', 0x04 => 'YMCKK', 0x05 => 'YMCK-UV'}],
-      ink_number_printed: [4, nil, :word],
-      ink_lot_number: [8, nil, :ascii, 6],
+      ink_code: [2, nil, nil, :set, {0x00 => 'YMCK', 0x02 => 'YMCK-PO', 0x03 => 'K', 0x04 => 'YMCKK', 0x05 => 'YMCK-UV'}],
+      ink_number_printed: [4, nil, nil, :word],
+      ink_lot_number: [8, nil, nil, :ascii, 6],
     })
 
     ModeSensePrintAttrs = to_attr_desc({
-      print_ink_code: [21, nil, :set, {0 => 'YMCK', 2 => 'YMCK-PO', 3 => 'K', 4 => 'YMCKK', 5 => 'YMCK-UV'}],
-      print_resin_black_energy: [41, 13, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
-      print_resin_black_mode: [42, 14, :set, {0 => 'Standard', 1 => 'Fine'}],
-      print_a0_energy: [43, 15, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
-      print_a1_energy: [44, 16, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
-      print_film_code: [20, 17, :set, {0 => 'Standard (1000 panels)', 2 => 'Standard (750panels)'}],
-      print_roller_temp_retransfer: [33, 4, :set, make_range(0 => "-3 (low)", 5 => "2 (high)")],
-      print_velocity_front: [34, 5, :set, make_range(0 => "2 (Fast)", 12 => "-10 (Slow)")],
-      print_velocity_back: [35, 6, :set, make_range(0 => "2 (Fast)", 12 => "-10 (Slow)")],
+      print_ink_code: [21, nil, nil, :set, {0 => 'YMCK', 2 => 'YMCK-PO', 3 => 'K', 4 => 'YMCKK', 5 => 'YMCK-UV'}],
+      print_resin_black_energy: [41, 13, 3, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
+      print_resin_black_mode: [42, 14, 0, :set, {0 => 'Standard', 1 => 'Fine'}],
+      print_a0_energy: [43, 15, 3, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
+      print_a1_energy: [44, 16, 3, :set, make_range(0 => "-3 (bright)", 8 => "5 (dark)")],
+      print_film_code: [20, 17, 0, :set, {0 => 'Standard (1000 panels)', 2 => 'Standard (750panels)'}],
+      print_roller_temp_retransfer: [33, 4, 4, :set, make_range(0 => "-3 (low)", 5 => "2 (high)")],
+      print_velocity_front: [34, 5, 0, :set, make_range(0 => "2 (Fast)", 12 => "-10 (Slow)")],
+      print_velocity_back: [35, 6, 0, :set, make_range(0 => "2 (Fast)", 12 => "-10 (Slow)")],
 
-      print_buzzer_mode: [45, 21, :set, {0 => 'Buzzer is enabled', 1 => 'Buzzer is disabled'}],
-      print_power_save_minutes: [46, 22, :set, {0 =>'5', 1 =>'10', 2 =>'15', 3 =>'20', 4 =>'25', 5 =>'30', 6 =>'45', 7 =>'60', 8 =>'Off'}],
+      print_buzzer_mode: [45, 21, 0, :set, {0 => 'Buzzer is enabled', 1 => 'Buzzer is disabled'}],
+      print_power_save_minutes: [46, 22, 8, :set, {0 =>'5', 1 =>'10', 2 =>'15', 3 =>'20', 4 =>'25', 5 =>'30', 6 =>'45', 7 =>'60', 8 =>'Off'}],
 
-      print_roller_temp_card_fix: [36, 7, :set, make_range(0 => "-5 (low)", 5 => "0 (high)").merge(10 => "Off")],
-      print_velocity_card_fix: [37, 8, :set, make_range(0 => "-2 (slow)", 4 => "2 (fast)")],
-      print_peel_off_wait_seconds: [39, 10, :byte, 0..15],
+      print_roller_temp_card_fix: [36, 7, 3, :set, make_range(0 => "-5 (low)", 5 => "0 (high)").merge(10 => "Off")],
+      print_velocity_card_fix: [37, 8, 4, :set, make_range(0 => "-2 (slow)", 4 => "2 (fast)")],
+      print_peel_off_wait_seconds: [39, 10, 0, :byte, 0..15],
 
-      print_card_code: [22, 19, :set, {0 => 'Standard', 2 => 'Thin card (Card thickness is 0.25mm)'}],
-      print_revision_number: [40, nil, :byte],
-      print_film_quantity: [47, nil, :byte, 0..10],
-      print_ink_quantity: [48, nil, :byte, 0..50],
-      print_card_quantity: [49, nil, :set, {0 => 'Greater than 25 cards', 1 => 'From 1 to 24 cards', 2 => 'No cards', 3 => 'Right Side Card loading mode'}],
-      print_resolution_x: [4, nil, :word],
-      print_resolution_y: [6, nil, :word],
-      print_card_size_x: [12, nil, :word],
-      print_card_size_y: [14, nil, :word],
-      print_mg_mode: [17, nil, :set, {0 => 'None', 1 => 'MAG Encoder', 2 => 'JIS MAG Encoder'}],
-      print_ic_mode_contactless: [19, nil, :set, {0 => 'None', 2 => 'External small IC Encoder', 3 => 'External large IC Encoder'}],
-      print_ic_mode_contact: [18, nil, :set, {0 => 'None', 1 => 'Embedded IC Encoder', 2 => 'External IC Encoder'}],
-      print_position_x: [24, nil, :word],
-      print_position_y: [26, nil, :word],
-      print_size_x: [28, nil, :word],
-      print_size_y: [30, nil, :word],
+      print_card_code: [22, 19, 0, :set, {0 => 'Standard', 2 => 'Thin card (Card thickness is 0.25mm)'}],
+      print_revision_number: [40, nil, nil, :byte],
+      print_film_quantity: [47, nil, nil, :byte, 0..10],
+      print_ink_quantity: [48, nil, nil, :byte, 0..50],
+      print_card_quantity: [49, nil, nil, :set, {0 => 'Greater than 25 cards', 1 => 'From 1 to 24 cards', 2 => 'No cards', 3 => 'Right Side Card loading mode'}],
+      print_resolution_x: [4, nil, nil, :word],
+      print_resolution_y: [6, nil, nil, :word],
+      print_card_size_x: [12, nil, nil, :word],
+      print_card_size_y: [14, nil, nil, :word],
+      print_mg_mode: [17, nil, nil, :set, {0 => 'None', 1 => 'MAG Encoder', 2 => 'JIS MAG Encoder'}],
+      print_ic_mode_contactless: [19, nil, nil, :set, {0 => 'None', 2 => 'External small IC Encoder', 3 => 'External large IC Encoder'}],
+      print_ic_mode_contact: [18, nil, nil, :set, {0 => 'None', 1 => 'Embedded IC Encoder', 2 => 'External IC Encoder'}],
+      print_position_x: [24, nil, nil, :word],
+      print_position_y: [26, nil, nil, :word],
+      print_size_x: [28, nil, nil, :word],
+      print_size_y: [30, nil, nil, :word],
     })
 
     ModeSenseEncodeAttrs = to_attr_desc({
-      mag_iso_mode: [2, 2, :set, {0 => 'No ISO MAG encoder', 1 => '300 Oe (Lo-Co)', 2 => '2750 Oe (Hi-Co)'}],
-      mag_read_write_retry: [7, 7, :byte, 0..3],
+      mag_iso_mode: [2, 2, 0, :set, {0 => 'No ISO MAG encoder', 1 => '300 Oe (Lo-Co)', 2 => '2750 Oe (Hi-Co)'}],
+      mag_read_write_retry: [7, 7, 0, :byte, 0..3],
     })
 
     ModeSensePages = {
@@ -276,10 +276,10 @@ module LibCX320
     }
 
     LogSenseAttrs = to_attr_desc({
-      log_total_count: [8, nil, :dword],
-      log_free_count: [16, nil, :dword],
-      log_head_count: [24, nil, :dword],
-      log_cleaning_count: [32, nil, :dword],
+      log_total_count: [8, nil, nil, :dword],
+      log_free_count: [16, nil, nil, :dword],
+      log_head_count: [24, nil, nil, :dword],
+      log_cleaning_count: [32, nil, nil, :dword],
     })
 
     LogSensePages = {
