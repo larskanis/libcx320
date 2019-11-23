@@ -9,7 +9,7 @@ module LibCX320
     def self.devices
       @@ctx = LIBUSB::Context.new
 
-      @@ctx.devices(idVendor: 0x04f1, idProduct: 0x4033).map.with_index do |dev, devidx|
+      @@ctx.devices(idVendor: 0x04f1, idProduct: [0x4030, 0x4033]).map.with_index do |dev, devidx|
         new(dev, devidx)
       end
     end
@@ -194,7 +194,7 @@ module LibCX320
       cdb = [ 0x32, type*4 + action, 0, 0].pack('CCNN')
       send_command( cdb, nil )
     end
-    
+
     def mode_sense(page, len)
       expected_length = len
       cdb = [ 0x1a, 0, page, 0, expected_length, 0].pack('CCCCCC')
