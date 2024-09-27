@@ -10,9 +10,9 @@ Gem::Specification.new do |spec|
   spec.email         = ["arndt@comcard.de", "kanis@comcard.de"]
   spec.summary       = %q{Driver for Retransfer Printer CX-320}
   spec.description   = %q{Driver for Retransfer Printer CX-320. Usable per PCP05CT.DLL or LIBUSB.}
-  spec.homepage      = ""
+  spec.homepage      = "https://gitlab/produktion/libcx320"
   spec.license       = "MIT"
-  spec.metadata['allowed_push_host'] = "http://ccgems"
+  spec.metadata['allowed_push_host'] = "https://ccgems"
 
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
