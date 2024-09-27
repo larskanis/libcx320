@@ -14,9 +14,9 @@ module LibCX320
       end
     end
 
-    def bulk_transfer(*args)
-      puts args.inspect[0, 90]
-      @devh.bulk_transfer(*args)
+    def bulk_transfer(**kwargs)
+      puts kwargs.inspect[0, 90]
+      @devh.bulk_transfer(**kwargs)
     end
 
     def send_command(cdb, data_length, direction=LIBUSB::ENDPOINT_IN)
