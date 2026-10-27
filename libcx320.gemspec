@@ -6,13 +6,12 @@ require 'libcx320/version'
 Gem::Specification.new do |spec|
   spec.name          = "libcx320"
   spec.version       = LibCX320::VERSION
-  spec.authors       = ["Holger Arndt", "Lars Kanis"]
-  spec.email         = ["arndt@comcard.de", "kanis@comcard.de"]
+  spec.authors       = ["Lars Kanis"]
+  spec.email         = ["lars@greiz-reinsdorf.de"]
   spec.summary       = %q{Driver for Retransfer Printer CX-320}
   spec.description   = %q{Driver for Retransfer Printer CX-320. Usable per PCP05CT.DLL or LIBUSB.}
-  spec.homepage      = "https://gitlab/produktion/libcx320"
+  spec.homepage      = "https://github.com/larskanis/libcx320"
   spec.license       = "MIT"
-  spec.metadata['allowed_push_host'] = "https://ccgems"
 
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }

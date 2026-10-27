@@ -1,6 +1,7 @@
 # Libcx320
 
-TODO: Write a gem description
+Driver for Retransfer Printer CX-320.
+Usable per PCP05CT.DLL on Windows or per direct LIBUSB access on any operating system.
 
 ## Installation
 
@@ -24,7 +25,7 @@ TODO: Write usage instructions here
 
 ## Contributing
 
-1. Fork it ( https://gitlab/produktion/libcx320 )
+1. Fork it ( https://github.com/larskanis/libcx320 )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
